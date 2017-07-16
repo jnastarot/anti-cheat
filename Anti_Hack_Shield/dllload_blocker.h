@@ -112,7 +112,7 @@ void c_anti_hack::on_load_dll(HMODULE hmod, std::wstring path) {
 		return;
 	}
 	else {
-		wprintf(L"closed load dll [%s]\n", path.c_str());
+		wprintf(L"blocked load dll [%s]\n", path.c_str());
 		TerminateThread(GetCurrentThread(), 1);
 	}
 }
@@ -137,6 +137,7 @@ bool c_anti_hack::init_dll_profiler() {
 		apfnDispatch[__ClientLoadLibrary_idx] = h_ClientLoadLibrary;
 		VirtualProtect(apfnDispatch, 117 * sizeof(LPVOID), oldprot, &oldprot);
 
+		this->init_state |= ANTIHACK_DLL;
 		return true;
 	}
 	else {

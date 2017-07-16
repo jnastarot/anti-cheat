@@ -1,9 +1,9 @@
 #pragma once
 
 
-#define ANTIHACK_DLL 1
-#define ANTIHACK_MSG 2
-
+#define ANTIHACK_DLL   1
+#define ANTIHACK_MSG   2
+#define ANTIHACK_MSG_1 4
 
 
 #define THREAD_REASON_REMOTE 1
@@ -19,6 +19,13 @@
 #define ObjectNameInformation 1
 #define ObjectTypeInformation 2
 #define SystemHandleInformation 16
+
+
+struct __keyallow{
+	bool Key;
+	DWORD Block_WM_KEY_DOWN_counter;
+	DWORD Block_WM_KEY_UP_counter;
+};
 
 
 typedef struct _SYSTEM_HANDLE

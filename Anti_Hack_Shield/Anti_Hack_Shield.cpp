@@ -17,6 +17,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 {
 	if (AllocConsole()) { freopen("CONOUT$", "w", stdout); setlocale(LC_ALL, "RUS"); }
 
+	
 	window* main_window = new window("Anti-Hack", "Anti-Hack_Class");
 
 	if (main_window->getSelfHandle()) {

@@ -1,29 +1,31 @@
 #include "stdafx.h"
 #include "antihack.h"
 
-#pragma comment (linker, "/INCLUDE:__tls_used")
-#pragma section(".CRT$XLB",read) 
 
-void NTAPI anticheat_thread_profiler(void* dll, DWORD reason, void* reserved);
-
-__declspec(allocate(".CRT$XLB")) PIMAGE_TLS_CALLBACK CallbackAddress[] = { anticheat_thread_profiler,NULL };
-
-
-c_anti_hack *anti_cheat = 0;
+c_anti_hack *anti_cheat =  new c_anti_hack();
 
 
 #include "dllload_blocker.h"
 #include "thread_blocker.h"
+
+#include "message_filterproc.h"
+
 #include "sendinput_blocker.h"
 #include "sendmessage_blocker.h"
 
 #include "process_scanner.h"
 
-
-
-
 c_anti_hack::c_anti_hack() {
 	//this->set_privileges();
+
+	ZeroMemory(KeyBoardArray, sizeof(KeyBoardArray));
+	ZeroMemory(MouseButtonsArray, sizeof(MouseButtonsArray));
+
+#ifdef _M_IX86 
+	IsWow64Process(GetCurrentProcess(), &this->IsWow64);
+#else
+	this->IsWow64 = true;
+#endif
 
 #ifdef _M_IX86 
 	PPEB pPeb =  (PPEB)(__readfsdword(0x30));
@@ -32,7 +34,7 @@ c_anti_hack::c_anti_hack() {
 #endif
 
 	if (pPeb->BeingDebugged) {
-		TerminateThread(GetCurrentThread(), 0);
+		//TerminateThread(GetCurrentThread(), 0);
 	}
 	
 
@@ -40,8 +42,8 @@ c_anti_hack::c_anti_hack() {
 	 __NtQuerySystemInformation = (_NtQuerySystemInformation)GetProcAddress(GetModuleHandle("ntdll.dll"), "NtQuerySystemInformation");
 	            __NtQueryObject = (_NtQueryObject)GetProcAddress(GetModuleHandle("ntdll.dll"), "NtQueryObject");
 
-	if (this->init_dll_profiler())     { this->init_state |= ANTIHACK_DLL; }
-	if (this->init_fakemsg_profiler()) { this->init_state |= ANTIHACK_MSG; }
+	this->init_dll_profiler();
+	this->init_fakemsg_profiler();
 
 	HMODULE kernel32   = GetModuleHandle("kernel32.dll");
 	HMODULE kernelbase = GetModuleHandle("kernelbase.dll");
@@ -61,8 +63,13 @@ c_anti_hack::c_anti_hack() {
 
 
 c_anti_hack::~c_anti_hack() {
-	if (this->init_state&ANTIHACK_DLL) { this->uninit_dll_profiler();     }
-	if (this->init_state&ANTIHACK_MSG) { this->uninit_fakemsg_profiler(); }
+	if (this->init_state&ANTIHACK_DLL) { 
+		this->uninit_dll_profiler();     
+	}
+
+	if (this->init_state&ANTIHACK_MSG || this->init_state&ANTIHACK_MSG_1) {
+		this->uninit_fakemsg_profiler(); 
+	}
 }
 
 
@@ -100,7 +107,8 @@ void NTAPI anticheat_thread_profiler(void*  dll, DWORD reason, void* reserved) {
 
 		case DLL_PROCESS_ATTACH: {
 			if (!anti_cheat) {
-				anti_cheat = new c_anti_hack();
+				// ( new ) on release x86 dont works here \_(0_0)_/
+				//anti_cheat = new c_anti_hack();
 			}
 			break;
 		}
@@ -112,3 +120,26 @@ void NTAPI anticheat_thread_profiler(void*  dll, DWORD reason, void* reserved) {
 		}
 	}
 }
+
+
+#ifdef _WIN64
+     #pragma comment (linker, "/INCLUDE:_tls_used")  
+     #pragma comment (linker, "/INCLUDE:tls_callback_func") 
+#else
+     #pragma comment (linker, "/INCLUDE:__tls_used")
+     #pragma comment (linker, "/INCLUDE:_tls_callback_func")
+#endif
+
+#ifdef _WIN64
+    #pragma const_seg(".CRT$XLF")
+    EXTERN_C const
+#else
+    #pragma data_seg(".CRT$XLF")
+    EXTERN_C
+#endif
+PIMAGE_TLS_CALLBACK tls_callback_func = anticheat_thread_profiler;
+#ifdef _WIN64
+    #pragma const_seg()
+#else
+    #pragma data_seg()
+#endif 

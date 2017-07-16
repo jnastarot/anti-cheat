@@ -14,7 +14,7 @@ bool  c_anti_hack::IsRemoteThread(DWORD ID) {
 	ULONG retlen = 1;
 	ULONG table_length = 0;
 	SYSTEM_HANDLE_INFORMATION * HandleTable = 0;
-	bool ret_status = false;
+	bool ret_status = true;
 
 	while (retlen) {
 	  NTSTATUS status =	__NtQuerySystemInformation((SYSTEM_INFORMATION_CLASS)SystemHandleInformation, HandleTable, table_length, &retlen);
@@ -50,13 +50,13 @@ bool  c_anti_hack::IsRemoteThread(DWORD ID) {
 		for (int i = 0; i < HandleTable->HandleCount; i++) { //Перебор всех хандлов нашего процесса и получение хандла текущего потока
 			if (HandleTable->Handles[i].ProcessId == this->ProcessId && HandleTable->Handles[i].ObjectTypeNumber == this->ObjectTypeNumberOfThread) {
 				if (ID == GetThreadId((HANDLE)HandleTable->Handles[i].Handle)) {
-					ret_status = true;
+					ret_status = false;
 				}
 			}
 		}
 	}
 	else {
-		ret_status = true;
+		ret_status = false;
 	}
 
 	delete[]HandleTable;
@@ -66,7 +66,7 @@ bool  c_anti_hack::IsRemoteThread(DWORD ID) {
 
 DWORD c_anti_hack::check_current_thread() {
 
-	if (IsRemoteThread(GetCurrentThreadId())) {
+	if (!IsRemoteThread(GetCurrentThreadId())) {
 		PVOID StartAddress = GetCurrentThreadStartAddress();
 		if (StartAddress) {
 
@@ -100,9 +100,11 @@ DWORD c_anti_hack::check_current_thread() {
 
 
 void c_anti_hack::onStartThread() {
+	printf("new thread [%x]\n", GetCurrentThreadId());
+
 	DWORD thread_code = check_current_thread();
 	  if(thread_code){
-		  printf("thread [%x] was closed reason : ",GetCurrentThread());
+		  printf("thread [%x] was closed reason : ", GetCurrentThreadId());
 
 		  switch (thread_code) {
 			  case THREAD_REASON_REMOTE: {

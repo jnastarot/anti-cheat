@@ -37,6 +37,12 @@
     <Filter Include="Заголовочные файлы\TestWindow">
       <UniqueIdentifier>{e9c78af7-54be-48b8-bb4d-2472e038437d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Заголовочные файлы\Anti-Hack\Internal\AntiEmulation\sendmessage">
+      <UniqueIdentifier>{1bbf0996-3118-43a8-ad27-732dff4fd2ab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Заголовочные файлы\Anti-Hack\Internal\AntiEmulation\sendinput">
+      <UniqueIdentifier>{0f792633-e9b9-4dd3-9633-df5dabe9b921}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -47,12 +53,6 @@
     </ClInclude>
     <ClInclude Include="window.h">
       <Filter>Заголовочные файлы\TestWindow</Filter>
-    </ClInclude>
-    <ClInclude Include="sendinput_blocker.h">
-      <Filter>Заголовочные файлы\Anti-Hack\Internal\AntiEmulation</Filter>
-    </ClInclude>
-    <ClInclude Include="sendmessage_blocker.h">
-      <Filter>Заголовочные файлы\Anti-Hack\Internal\AntiEmulation</Filter>
     </ClInclude>
     <ClInclude Include="dllload_blocker.h">
       <Filter>Заголовочные файлы\Anti-Hack\Internal\LoadDll</Filter>
@@ -68,6 +68,21 @@
     </ClInclude>
     <ClInclude Include="antihack.h">
       <Filter>Заголовочные файлы\Anti-Hack</Filter>
+    </ClInclude>
+    <ClInclude Include="sendmsg_dispatcher_old.h">
+      <Filter>Заголовочные файлы\Anti-Hack\Internal\AntiEmulation\sendmessage</Filter>
+    </ClInclude>
+    <ClInclude Include="sendmsg_dispatcher.h">
+      <Filter>Заголовочные файлы\Anti-Hack\Internal\AntiEmulation\sendmessage</Filter>
+    </ClInclude>
+    <ClInclude Include="sendmessage_blocker.h">
+      <Filter>Заголовочные файлы\Anti-Hack\Internal\AntiEmulation\sendmessage</Filter>
+    </ClInclude>
+    <ClInclude Include="sendinput_blocker.h">
+      <Filter>Заголовочные файлы\Anti-Hack\Internal\AntiEmulation\sendinput</Filter>
+    </ClInclude>
+    <ClInclude Include="message_filterproc.h">
+      <Filter>Заголовочные файлы\Anti-Hack\Internal\AntiEmulation</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

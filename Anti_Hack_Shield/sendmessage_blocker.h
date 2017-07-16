@@ -15,91 +15,45 @@ typedef struct _fnClient {
 	}element[40];
 }fnClient, *pfnClient;
 
+typedef struct _fnClient32 {
+	struct pfnelement {
+		void * pFunc;
+	}element[40];
+}fnClient32, *pfnClient32;
+
+
 #define _DispatchClientMessage_idx 21
 
-typedef int (WINAPI * _RtlRetrieveNtUserPfn)(pfnClient* clientA, pfnClient* clientW, pfnClient* Unk);
-typedef int (WINAPI * _DispatchClientMessage)(HWND *hwnd,
-#ifdef _M_IX86
-   DWORD aling_32,
+typedef int (WINAPI * _RtlRetrieveNtUserPfn)(void** clientA, void** clientW, void** Unk);
+
+typedef int (WINAPI * _DispatchClientMessagex64)(HWND *hwnd,
+#ifdef _M_IX86 
+	DWORD aling_32, 
 #endif
 	DWORD msg, WPARAM wparam, LPARAM lparam, WNDPROC proc);
 
-_DispatchClientMessage o_DispatchClientMessage_A = 0;
-_DispatchClientMessage o_DispatchClientMessage_W = 0;
+typedef int (WINAPI * _DispatchClientMessagex32)(HWND *hwnd,DWORD msg, WPARAM wparam, LPARAM lparam, WNDPROC proc);
 
-pfnClient fnClientA, fnClientW, fnClientWorker;
+
+LPVOID o_DispatchClientMessage_A = 0;
+LPVOID o_DispatchClientMessage_W = 0;
+
+void * fnClientA,* fnClientW,* fnClientWorker;
 
 POINTER_TYPE * vtbl_pDispatchA = 0;
 POINTER_TYPE * vtbl_pDispatchW = 0;
 
-bool validate_msg(DWORD msg) {
-	switch (msg) {
-		//выборка оконных сообщений эмуляция которых будет блокироваться
 
-			//keyborad
-		case WM_KEYDOWN:case WM_KEYUP:
-			//mouse
-		case WM_RBUTTONDOWN:case WM_LBUTTONDOWN:case WM_LBUTTONDBLCLK:
-		case WM_LBUTTONUP:case WM_RBUTTONUP:case WM_RBUTTONDBLCLK:
-		case WM_MBUTTONDOWN: case WM_MBUTTONUP: case WM_MBUTTONDBLCLK:
-		case WM_MOUSEWHEEL: case WM_MOUSEHWHEEL:
-		{
-			printf("Device Emulation [SendMessage]\n");
-			return false;
-		}
-		default:
-			return true;
-	}
-}
+#include "sendmsg_dispatcher.h"
+#include "sendmsg_dispatcher_old.h"
 
-int WINAPI h_DispatchClientMessage_W(HWND* hwnd,
-#ifdef _M_IX86
-	DWORD aling_32,
-#endif	
-	DWORD msg, WPARAM wparam, LPARAM lparam, WNDPROC proc) {
-
-	if (hwnd) {
-		if (!validate_msg(msg)) {
-			return 0;
-		}
-	}
-
-	return o_DispatchClientMessage_W(hwnd,
-#ifdef _M_IX86
-		aling_32,
-#endif
-		msg, wparam, lparam, proc);
-}
-
-int WINAPI h_DispatchClientMessage_A(HWND* hwnd, 
-#ifdef _M_IX86
-	DWORD aling_32,
-#endif	
-	DWORD msg, WPARAM wparam, LPARAM lparam, WNDPROC proc) {
-
-
-
-	switch (msg) {
-		if (!validate_msg(msg)) {
-			return 0;
-		}
-	}
-
-
-
-	return  o_DispatchClientMessage_A(hwnd,
-#ifdef _M_IX86
-		aling_32,
-#endif
-		msg, wparam, lparam, proc);
-}
 
 
 bool c_anti_hack::init_fakemsg_profiler() {
 	_RtlRetrieveNtUserPfn RtlRetrieveNtUserPfn = (_RtlRetrieveNtUserPfn)GetProcAddress(GetModuleHandle("ntdll.dll"), "RtlRetrieveNtUserPfn");
 
-	if (RtlRetrieveNtUserPfn) {
-		RtlRetrieveNtUserPfn(&fnClientA, &fnClientW, &fnClientWorker);
+	if (RtlRetrieveNtUserPfn && RtlRetrieveNtUserPfn(&fnClientA, &fnClientW, &fnClientWorker) == STATUS_SUCCESS) {
+		//tested on windows 10 x64
 
 		/*
 		pfnClient->
@@ -111,42 +65,79 @@ bool c_anti_hack::init_fakemsg_profiler() {
 		...
 		*/
 
-
+		if (this->IsWow64) {
 #ifdef _M_IX86
-		vtbl_pDispatchA = (POINTER_TYPE*)*(DWORD*)((DWORD)fnClientA->element[_DispatchClientMessage_idx].pFunc + 2);
-		vtbl_pDispatchW = (POINTER_TYPE*)*(DWORD*)((DWORD)fnClientW->element[_DispatchClientMessage_idx].pFunc + 2);
+			vtbl_pDispatchA = (POINTER_TYPE*)*(DWORD*)((DWORD)((pfnClient)fnClientA)->element[_DispatchClientMessage_idx].pFunc + 2);
+			vtbl_pDispatchW = (POINTER_TYPE*)*(DWORD*)((DWORD)((pfnClient)fnClientW)->element[_DispatchClientMessage_idx].pFunc + 2);
 #else
-		vtbl_pDispatchA = (POINTER_TYPE*)(*(DWORD*)((DWORD64)fnClientA->element[_DispatchClientMessage_idx].pFunc + 2) + (POINTER_TYPE)fnClientA->element[_DispatchClientMessage_idx].pFunc + 6);
-		vtbl_pDispatchW = (POINTER_TYPE*)(*(DWORD*)((DWORD64)fnClientW->element[_DispatchClientMessage_idx].pFunc + 2) + (POINTER_TYPE)fnClientW->element[_DispatchClientMessage_idx].pFunc + 6);
+			vtbl_pDispatchA = (POINTER_TYPE*)(*(DWORD*)((DWORD64)((pfnClient)fnClientA)->element[_DispatchClientMessage_idx].pFunc + 2) + (POINTER_TYPE)((pfnClient)fnClientA)->element[_DispatchClientMessage_idx].pFunc + 6);
+			vtbl_pDispatchW = (POINTER_TYPE*)(*(DWORD*)((DWORD64)((pfnClient)fnClientA)->element[_DispatchClientMessage_idx].pFunc + 2) + (POINTER_TYPE)((pfnClient)fnClientA)->element[_DispatchClientMessage_idx].pFunc + 6);
 #endif
+		}
+		else {
+			vtbl_pDispatchA = (POINTER_TYPE*)*(DWORD*)((DWORD)((pfnClient32)fnClientA)->element[_DispatchClientMessage_idx].pFunc + 2);
+			vtbl_pDispatchW = (POINTER_TYPE*)*(DWORD*)((DWORD)((pfnClient32)fnClientW)->element[_DispatchClientMessage_idx].pFunc + 2);
+		}
 
-		o_DispatchClientMessage_A = (_DispatchClientMessage)*vtbl_pDispatchA;
-		o_DispatchClientMessage_W = (_DispatchClientMessage)*vtbl_pDispatchW;
+		
 
+		o_DispatchClientMessage_A = (_DispatchClientMessagex64)*vtbl_pDispatchA;
+		o_DispatchClientMessage_W = (_DispatchClientMessagex64)*vtbl_pDispatchW;
 
 		DWORD lastProt;
 		VirtualProtect((void*)vtbl_pDispatchA, 0xB8, PAGE_EXECUTE_READWRITE, &lastProt);
-		*vtbl_pDispatchA = (POINTER_TYPE)h_DispatchClientMessage_A;
+		if (this->IsWow64) {
+			*vtbl_pDispatchA = (POINTER_TYPE)h_DispatchClientMessage_A_win64;
+		}
+		else {
+			*vtbl_pDispatchA = (POINTER_TYPE)h_DispatchClientMessage_A_win32;
+		}
+
 		VirtualProtect((void*)vtbl_pDispatchA, 0xB8, lastProt, &lastProt);
 
+
 		VirtualProtect((void*)vtbl_pDispatchW, 0xB8, PAGE_EXECUTE_READWRITE, &lastProt);
-		*vtbl_pDispatchW = (POINTER_TYPE)h_DispatchClientMessage_W;
+		if (this->IsWow64) {
+			*vtbl_pDispatchW = (POINTER_TYPE)h_DispatchClientMessage_W_win64;
+		}
+		else {
+			*vtbl_pDispatchW = (POINTER_TYPE)h_DispatchClientMessage_W_win32;
+		}
 		VirtualProtect((void*)vtbl_pDispatchW, 0xB8, lastProt, &lastProt);
 
+
+		this->init_state |= ANTIHACK_MSG;
 		return true;
 	}
-	else {
-		return false;
-	}
+
+	return init_fakemsg_oldprofiler();
 }
 
 void c_anti_hack::uninit_fakemsg_profiler() {
-	DWORD lastProt;
-	VirtualProtect((void*)vtbl_pDispatchA, 0xB8, PAGE_EXECUTE_READWRITE, &lastProt);
-	*vtbl_pDispatchA = (POINTER_TYPE)o_DispatchClientMessage_A;
-	VirtualProtect((void*)vtbl_pDispatchA, 0xB8, lastProt, &lastProt);
+	if (this->init_state&ANTIHACK_MSG_1) {
+		uninit_fakemsg_oldprofiler();
+	}
 
-	VirtualProtect((void*)vtbl_pDispatchW, 0xB8, PAGE_EXECUTE_READWRITE, &lastProt);
-	*vtbl_pDispatchW = (POINTER_TYPE)o_DispatchClientMessage_W;
-	VirtualProtect((void*)vtbl_pDispatchW, 0xB8, lastProt, &lastProt);
+	if(this->init_state&ANTIHACK_MSG){
+		DWORD lastProt;
+		VirtualProtect((void*)vtbl_pDispatchA, 0xB8, PAGE_EXECUTE_READWRITE, &lastProt);
+		*vtbl_pDispatchA = (POINTER_TYPE)o_DispatchClientMessage_A;
+		VirtualProtect((void*)vtbl_pDispatchA, 0xB8, lastProt, &lastProt);
+
+		VirtualProtect((void*)vtbl_pDispatchW, 0xB8, PAGE_EXECUTE_READWRITE, &lastProt);
+		*vtbl_pDispatchW = (POINTER_TYPE)o_DispatchClientMessage_W;
+		VirtualProtect((void*)vtbl_pDispatchW, 0xB8, lastProt, &lastProt);
+	}
+}
+
+
+bool c_anti_hack::init_fakemsg_oldprofiler() {
+	SetWindowsHookA(WH_GETMESSAGE, winhook_profiler);
+	this->init_state |= ANTIHACK_MSG_1;
+	return true;
+}
+
+
+void c_anti_hack::uninit_fakemsg_oldprofiler() {
+	UnhookWindowsHook(WH_GETMESSAGE, winhook_profiler);
 }

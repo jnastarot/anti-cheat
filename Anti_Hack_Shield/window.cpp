@@ -9,7 +9,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
-
+	case WM_KEYDOWN: {
+		printf("Key down opcode %c!\n", wParam);
+		break;
+	}
+	case WM_LBUTTONDOWN: {
+		printf("You are lclicked in window!\n");
+		break;
+	}
+	case WM_RBUTTONDOWN: {
+		printf("You are rclicked in window!\n");
+		break;
+	}
 
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);

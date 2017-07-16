@@ -147,7 +147,10 @@
     <ClInclude Include="AH_internal.h" />
     <ClInclude Include="antihack.h" />
     <ClInclude Include="dllload_blocker.h" />
+    <ClInclude Include="message_filterproc.h" />
     <ClInclude Include="process_scanner.h" />
+    <ClInclude Include="sendmsg_dispatcher.h" />
+    <ClInclude Include="sendmsg_dispatcher_old.h" />
     <ClInclude Include="thread_blocker.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
